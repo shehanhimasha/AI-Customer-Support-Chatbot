@@ -18,14 +18,3 @@ Built with Python, Groq (Llama 3.3 70B), and a hybrid rule-based + LLM architect
 - **Data**: Synthetic datasets (`orders.json`, `products.json`, `faq.json`)
 - **Libraries**: `requests`, `python-dotenv`, `difflib`, `re`, `streamlit` (optional)
 
-## Project Structure
-shop-easy-chatbot/
-├── data/
-│   ├── orders.json
-│   ├── products.json
-│   └── faq.json
-├── ai_chatbot.py         # Groq LLM wrapper + smart system prompt
-├── app.py                # Main console chatbot (rule-based + LLM)
-├── web.py                # Streamlit web version (optional)
-├── .env                  # Your GROQ_API_KEY
-└── README.md
