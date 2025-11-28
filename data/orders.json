@@ -1,0 +1,12 @@
+[
+  {"order_id": "ORD1001", "email": "alice@example.com", "status": "Shipped, expected 2 days", "product_id": "P001"},
+  {"order_id": "ORD1002", "email": "bob@example.com", "status": "Processing", "product_id": "P003"},
+  {"order_id": "ORD1003", "email": "carol@example.com", "status": "Delivered", "product_id": "P002"},
+  {"order_id": "ORD1004", "email": "dave@example.com", "status": "Cancelled", "product_id": "P005"},
+  {"order_id": "ORD1005", "email": "eve@example.com", "status": "Shipped, expected 3 days", "product_id": "P004"},
+  {"order_id": "ORD1006", "email": "frank@example.com", "status": "Processing", "product_id": "P006"},
+  {"order_id": "ORD1007", "email": "grace@example.com", "status": "Delivered", "product_id": "P007"},
+  {"order_id": "ORD1008", "email": "heidi@example.com", "status": "Shipped, expected 1 day", "product_id": "P008"},
+  {"order_id": "ORD1009", "email": "ivan@example.com", "status": "Processing", "product_id": "P009"},
+  {"order_id": "ORD1010", "email": "judy@example.com", "status": "Delivered", "product_id": "P010"}
+]

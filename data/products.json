@@ -1,0 +1,12 @@
+[
+  {"product_id": "P001", "name": "Wireless Mouse", "price": 25.99, "category": "Electronics"},
+  {"product_id": "P002", "name": "Bluetooth Headphones", "price": 49.99, "category": "Electronics"},
+  {"product_id": "P003", "name": "Smart Watch", "price": 89.99, "category": "Wearables"},
+  {"product_id": "P004", "name": "USB-C Charger", "price": 19.99, "category": "Accessories"},
+  {"product_id": "P005", "name": "Laptop Stand", "price": 39.99, "category": "Office"},
+  {"product_id": "P006", "name": "Gaming Keyboard", "price": 59.99, "category": "Gaming"},
+  {"product_id": "P007", "name": "External SSD 500GB", "price": 79.99, "category": "Storage"},
+  {"product_id": "P008", "name": "HD Webcam", "price": 45.99, "category": "Electronics"},
+  {"product_id": "P009", "name": "Portable Speaker", "price": 29.99, "category": "Audio"},
+  {"product_id": "P010", "name": "Fitness Tracker", "price": 69.99, "category": "Wearables"}
+]
