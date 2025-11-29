@@ -2,70 +2,130 @@ from dotenv import load_dotenv
 import os
 import requests
 import json
+import re
+from difflib import get_close_matches
 
 load_dotenv()
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
 
+# Load orders
+if os.path.exists("data/orders.json"):
+    with open("data/orders.json") as f:
+        ORDERS = json.load(f)
+else:
+    print("Warning: orders.json not found. Order tracking will not work.")
+    ORDERS = []
 
-with open("data/orders.json") as f:
-    ORDERS = json.load(f)
-with open("data/products.json") as f:
-    PRODUCTS = json.load(f)
-with open("data/faq.json") as f:
-    FAQS = json.load(f)
+# Load products
+if os.path.exists("data/products.json"):
+    with open("data/products.json") as f:
+        PRODUCTS = json.load(f)
+else:
+    print("Warning: products.json not found. Product recommendations will not work.")
+    PRODUCTS = []
 
-def get_response(user_input: str, chat_history: list = None) -> str:
+# Load FAQs
+if os.path.exists("data/faq.json"):
+    with open("data/faq.json") as f:
+        FAQS = json.load(f)
+else:
+    print("Warning: faq.json not found. FAQ answers will not work.")
+    FAQS = {}
+
+# ================= Rule-based helpers =================
+
+def check_faq(user_input: str):
+    key = user_input.lower().strip()
+    if key in FAQS:
+        return FAQS[key]
+    
+    # Fuzzy match
+    matches = get_close_matches(key, FAQS.keys(), n=1, cutoff=0.4)
+    if matches:
+        return FAQS[matches[0]]
+    
+    return None
+
+
+def get_order_status(order_id: str):
+    for order in ORDERS:
+        if order["order_id"].upper() == order_id.upper():
+            # Find product info
+            product = next((p for p in PRODUCTS if p["product_id"] == order.get("product_id")), None)
+            prod_text = f" — {product['name']} (${product['price']})" if product else ""
+            
+            email = order.get("email", "No email available")
+            status = order.get("status", "No status available")
+            
+            return (
+                f"Order {order['order_id']} ({email})\n"
+                f"Status: {status}\n"
+                f"Item: {order.get('product_id', 'Unknown')}{prod_text}"
+            )
+    return "I couldn't find that order. Please check the ID."
+
+
+def get_product_info():
+    text = "Here are some recommended products:\n"
+    for p in PRODUCTS:
+        text += f"- {p['name']} — ${p['price']} ({p['category']})\n"
+    return text
+
+
+# ================= Rule-based main function =================
+
+def rule_based_response(user_input: str):
+    #FAQ match
+    faq = check_faq(user_input)
+    if faq:
+        return faq
+
+    # Order ID match
+    order_match = re.search(r"\bORD\d{4}\b", user_input.upper())
+    if order_match:
+        return get_order_status(order_match.group())
+
+    # Product recommendation
+    if any(word in user_input.lower() for word in ["recommend", "suggest", "product", "show me"]):
+        return get_product_info()
+
+    return None
+
+
+# ================= LLM fallback =================
+
+def get_response(user_input: str, chat_history: list = None):
     if chat_history is None:
         chat_history = []
 
-    # Build few-shot examples + data summary for the model
-    system_prompt = f"""You are ShopEasy AI, a precise and friendly e-commerce support bot.
+    system_prompt = """
+You are ShopEasy AI.
 
-IMPORTANT RULES:
-- First check if the user is asking about an order status → look for "ORD" followed by 4 digits.
-- First check FAQs (exact or very close match).
-- First check if they mention a product ID or ask for recommendations.
-- ONLY answer using the data below. NEVER invent information.
+RULES:
+- Use ONLY the provided product, order, and FAQ data.
+- Never invent new info.
 - Keep replies short and friendly.
-- If you are not 100% sure, say "Let me check that for you" and use the data.
+- If something isn't in the data, say: "Let me check that for you."
+- Do NOT re-check order IDs, FAQs, or product matches. Python handles that before sending the query.
 
-FAQ database (answer exactly these when matched):
-{json.dumps(FAQS, indent=2)}
-
-Available orders (only answer for these order IDs):
-{json.dumps([o["order_id"] + " → " + o["status"] for o in ORDERS], indent=2)}
-
-Available products:
-{json.dumps({p["product_id"]: f"{p['name']} (${p['price']}) - {p['category']}" for p in PRODUCTS}, indent=2)}
-
-Examples:
-User: what's my order status ORD1001
-Assistant: Order ORD1001 (alice@example.com)
-Status: Shipped, expected 2 days
-Product ID: P001 → Wireless Mouse (Electronics) — $25.99
-
-User: return policy
-Assistant: You can return products within 30 days of delivery. Visit our Returns page for details.
-
-User: recommend products
-Assistant: Here are some popular items:
-- Wireless Mouse — $25.99
-- Bluetooth Headphones — $49.99
-- Smart Watch — $89.99
-
-Now answer the user.
+Your job:
+- Explain things clearly
+- Answer product questions
+- Expand simple responses
+- Chat naturally
 """
 
-    messages = [{"role": "system", "content": system_prompt}] + chat_history + [{"role": "user", "content": user_input}]
+    messages = [{"role": "system", "content": system_prompt}] + chat_history + [
+        {"role": "user", "content": user_input}
+    ]
 
     payload = {
         "model": "llama-3.3-70b-versatile",
         "messages": messages,
         "max_tokens": 250,
-        "temperature": 0.2,   
-        "top_p": 0.95
+        "temperature": 0.3
     }
 
     headers = {
@@ -78,4 +138,4 @@ Now answer the user.
         r.raise_for_status()
         return r.json()["choices"][0]["message"]["content"].strip()
     except Exception as e:
-        return f"Sorry, I'm having technical issues right now. Error: {str(e)}"
+        return f"Technical issue: {str(e)}"
